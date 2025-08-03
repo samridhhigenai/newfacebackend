@@ -1,0 +1,29 @@
+# Ultra-reliable Dockerfile using Ubuntu base
+FROM ubuntu:22.04
+
+# Install Java 17 and Maven
+RUN apt-get update && \
+    apt-get install -y openjdk-17-jdk maven && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set JAVA_HOME
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+
+# Set working directory
+WORKDIR /app
+
+# Copy pom.xml and download dependencies
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+
+# Copy source code
+COPY src ./src
+
+# Build the application
+RUN mvn clean package -DskipTests
+
+# Expose port
+EXPOSE 8081
+
+# Run the application
+CMD ["java", "-jar", "target/face-attendance-backend-1.0.0.jar"]

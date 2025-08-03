@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: face-attendance-backend
+    runtime: java
+    buildCommand: mvn clean package -DskipTests
+    startCommand: java -jar target/face-attendance-backend-1.0.0.jar
+    plan: free
+    envVars:
+      - key: JAVA_TOOL_OPTIONS
+        value: "-Xmx512m -Djdk.tls.client.protocols=TLSv1.2 -Dcom.mongodb.ssl.trustStore.type=JKS"
+      - key: MAVEN_OPTS
+        value: "-Xmx512m"
+      - key: JAVA_OPTS
+        value: "-Djdk.tls.client.protocols=TLSv1.2 -Dcom.mongodb.ssl.trustStore.type=JKS"

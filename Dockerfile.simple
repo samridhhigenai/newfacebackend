@@ -1,0 +1,16 @@
+# Simple single-stage Dockerfile
+# Note: Build JAR locally first with: mvn clean package -DskipTests
+
+FROM eclipse-temurin:17-jre
+
+# Set working directory
+WORKDIR /app
+
+# Copy the pre-built JAR file
+COPY target/face-attendance-backend-1.0.0.jar app.jar
+
+# Expose port
+EXPOSE 8081
+
+# Run the application
+CMD ["java", "-jar", "app.jar"]
