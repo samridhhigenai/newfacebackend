@@ -16,6 +16,11 @@ public interface EmployeeRepository extends MongoRepository<Employee, String> {
 
     List<Employee> findByTenantIdAndIsActiveTrue(String tenantId);
 
+    // Tenant Login ID queries
+    List<Employee> findByTenantLoginId(String tenantLoginId);
+
+    List<Employee> findByTenantLoginIdAndIsActiveTrue(String tenantLoginId);
+
     Optional<Employee> findByTenantIdAndEmail(String tenantId, String email);
 
     Optional<Employee> findByTenantIdAndEmployeeId(String tenantId, String employeeId);

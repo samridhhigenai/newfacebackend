@@ -50,12 +50,12 @@ public class EmployeeController {
     }
 
     /**
-     * Get all active employees by tenant
+     * Get all active employees by tenant login ID
      */
     @GetMapping
     public ResponseEntity<List<EmployeeResponse>> getAllEmployees(
-            @RequestParam("tenantId") String tenantId) {
-        List<EmployeeResponse> employees = employeeService.getAllActiveEmployeesByTenant(tenantId);
+            @RequestParam("tenantLoginId") String tenantLoginId) {
+        List<EmployeeResponse> employees = employeeService.getAllActiveEmployeesByTenantLoginId(tenantLoginId);
         return ResponseEntity.ok(employees);
     }
 

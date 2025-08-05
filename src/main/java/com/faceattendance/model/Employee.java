@@ -21,6 +21,9 @@ public class Employee {
     @NotBlank(message = "Tenant ID is required")
     private String tenantId;
 
+    @NotBlank(message = "Tenant Login ID is required")
+    private String tenantLoginId;
+
     @NotBlank(message = "Name is required")
     @Size(min = 2, max = 100, message = "Name must be between 2 and 100 characters")
     private String name;
@@ -77,6 +80,14 @@ public class Employee {
 
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
+    }
+
+    public String getTenantLoginId() {
+        return tenantLoginId;
+    }
+
+    public void setTenantLoginId(String tenantLoginId) {
+        this.tenantLoginId = tenantLoginId;
     }
 
     public String getName() {

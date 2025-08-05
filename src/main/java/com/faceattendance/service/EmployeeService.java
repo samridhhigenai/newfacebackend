@@ -131,6 +131,16 @@ public class EmployeeService {
     }
 
     /**
+     * Get all active employees by tenant login ID
+     */
+    public List<EmployeeResponse> getAllActiveEmployeesByTenantLoginId(String tenantLoginId) {
+        return employeeRepository.findByTenantLoginIdAndIsActiveTrue(tenantLoginId)
+                .stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Get all employees by tenant (including inactive)
      */
     public List<Employee> getEmployeesByTenant(String tenantId) {
