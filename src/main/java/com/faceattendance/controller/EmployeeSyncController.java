@@ -324,7 +324,7 @@ public class EmployeeSyncController {
             @RequestParam(required = false) String tenantPassword,
             @RequestParam(required = false) String accessToken,
             @RequestParam(defaultValue = "0") int skipCount,
-            @RequestParam(defaultValue = "10") int maxResultCount) {
+            @RequestParam(defaultValue = "1000") int maxResultCount) {
         try {
             System.out.println("=== Sync From External API Request ===");
             System.out.println("Tenant ID: " + tenantId);

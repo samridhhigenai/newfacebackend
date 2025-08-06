@@ -79,6 +79,7 @@ public class AttendanceService {
         // Create new attendance record
         Attendance attendance = new Attendance();
         attendance.setEmployee(employee);
+        attendance.setTenantId(employee.getTenantId()); // Set tenantId from employee
         attendance.setCheckInTime(LocalDateTime.now());
         attendance.setAttendanceDate(today);
         attendance.setStatus(status);
@@ -144,6 +145,7 @@ public class AttendanceService {
             // Create new attendance record
             Attendance attendance = new Attendance();
             attendance.setEmployee(employee);
+            attendance.setTenantId(employee.getTenantId()); // Set tenantId from employee
             attendance.setCheckInTime(LocalDateTime.now());
             attendance.setAttendanceDate(today);
             attendance.setStatus(status);
@@ -214,6 +216,7 @@ public class AttendanceService {
             // Create new attendance record
             Attendance attendance = new Attendance();
             attendance.setEmployee(employee);
+            attendance.setTenantId(employee.getTenantId()); // Set tenantId from employee
             attendance.setCheckInTime(LocalDateTime.now());
             attendance.setAttendanceDate(today);
             attendance.setStatus(Attendance.AttendanceStatus.PRESENT);
