@@ -256,34 +256,48 @@ public class AttendanceService {
     }
 
     /**
-     * Get all attendance history (for Flutter app)
+     * Get all attendance history (for Flutter app) - tenant-specific
      */
-    public List<AttendanceResponse> getAllAttendanceHistory(String employeeId, LocalDate startDate, LocalDate endDate) {
+    public List<AttendanceResponse> getAllAttendanceHistory(String employeeId, String tenantId, LocalDate startDate, LocalDate endDate) {
+        // Use provided tenantId or get from current context
+        String actualTenantId = (tenantId != null && !tenantId.isEmpty()) ? tenantId : getCurrentTenantId();
+
         List<Attendance> attendances;
 
         if (employeeId != null) {
-            // Get history for specific employee
-            Employee employee = new Employee();
-            employee.setId(employeeId);
-
+            // Get history for specific employee with tenantId
             if (startDate != null && endDate != null) {
-                attendances = attendanceRepository.findByEmployeeIdAndAttendanceDateBetween(
-                        employeeId, startDate, endDate);
+                attendances = attendanceRepository.findByTenantIdAndEmployeeIdAndDateRange(
+                        actualTenantId, employeeId, startDate, endDate);
             } else {
-                attendances = attendanceRepository.findByEmployeeOrderByAttendanceDateDesc(employee);
+                // For now, get all attendance for this tenant and filter by employeeId
+                attendances = attendanceRepository.findAllByTenantIdOrderByAttendanceDateDesc(actualTenantId)
+                        .stream()
+                        .filter(attendance -> attendance.getEmployee() != null &&
+                                employeeId.equals(attendance.getEmployee().getId()))
+                        .collect(Collectors.toList());
             }
         } else {
-            // Get all attendance history
+            // Get all attendance history for this tenant
             if (startDate != null && endDate != null) {
-                attendances = attendanceRepository.findByAttendanceDateBetween(startDate, endDate);
+                attendances = attendanceRepository.findByTenantIdAndAttendanceDateBetween(actualTenantId, startDate, endDate);
             } else {
-                attendances = attendanceRepository.findAllByOrderByAttendanceDateDesc();
+                attendances = attendanceRepository.findAllByTenantIdOrderByAttendanceDateDesc(actualTenantId);
             }
         }
 
         return attendances.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Get current tenant ID from context or use default
+     */
+    private String getCurrentTenantId() {
+        // For now, return default tenant ID
+        // TODO: Get from security context or request parameter
+        return "12345"; // Default tenant ID
     }
 
     /**

@@ -98,12 +98,15 @@ public class AttendanceController {
     @GetMapping("/history")
     public ResponseEntity<?> getAllAttendanceHistory(
             @RequestParam(required = false) String employeeId,
+            @RequestParam(required = false) String tenantId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         try {
-            List<AttendanceResponse> history = attendanceService.getAllAttendanceHistory(employeeId, startDate, endDate);
+            List<AttendanceResponse> history = attendanceService.getAllAttendanceHistory(employeeId, tenantId, startDate, endDate);
             return ResponseEntity.ok(history);
         } catch (Exception e) {
+            System.err.println("Error fetching attendance history: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ErrorResponse("Failed to fetch attendance history", e.getMessage()));
         }
