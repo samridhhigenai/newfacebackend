@@ -320,6 +320,8 @@ public class EmployeeSyncController {
     @PostMapping("/sync-from-external")
     public ResponseEntity<?> syncFromExternalAPI(
             @RequestParam(defaultValue = "12345") String tenantId,
+            @RequestParam(required = false) String tenantLoginId,
+            @RequestParam(required = false) String tenantPassword,
             @RequestParam(required = false) String accessToken,
             @RequestParam(defaultValue = "0") int skipCount,
             @RequestParam(defaultValue = "10") int maxResultCount) {
@@ -329,8 +331,15 @@ public class EmployeeSyncController {
             System.out.println("Skip Count: " + skipCount);
             System.out.println("Max Result Count: " + maxResultCount);
 
-            // External API URL with dynamic parameters
+            // External API URL with dynamic parameters and tenant filtering
             String externalApiUrl = "http://103.11.86.192:8083/api/services/app/Employees/GetAll?SkipCount=" + skipCount + "&MaxResultCount=" + maxResultCount;
+
+            // Add tenant filtering if tenantLoginId is provided
+            if (tenantLoginId != null && !tenantLoginId.isEmpty()) {
+                // Add tenant-specific filtering parameter
+                externalApiUrl += "&TenantLoginId=" + java.net.URLEncoder.encode(tenantLoginId, "UTF-8");
+                System.out.println("Added tenant filtering for: " + tenantLoginId);
+            }
 
             // Create RestTemplate with proper configuration
             RestTemplate restTemplate = new RestTemplate();
@@ -346,13 +355,19 @@ public class EmployeeSyncController {
                 }
             });
 
-            // Step 1: Get fresh access token from external API
-            String freshAccessToken = getAccessTokenFromExternalAPI();
-            if (freshAccessToken == null) {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "success", false,
-                    "message", "Failed to authenticate with external API"
-                ));
+            // Step 1: Use provided access token or get fresh one if not provided
+            String freshAccessToken = accessToken;
+            if (freshAccessToken == null || freshAccessToken.isEmpty()) {
+                System.out.println("No access token provided, getting fresh token...");
+                freshAccessToken = getAccessTokenFromExternalAPI(tenantLoginId, tenantPassword);
+                if (freshAccessToken == null) {
+                    return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "message", "Failed to authenticate with external API using tenant credentials: " + tenantLoginId
+                    ));
+                }
+            } else {
+                System.out.println("Using provided access token: " + freshAccessToken.substring(0, Math.min(20, freshAccessToken.length())) + "...");
             }
 
             // Set headers for external API with fresh token
@@ -512,13 +527,13 @@ public class EmployeeSyncController {
 
                     if (existingEmployee != null) {
                         // Update existing employee
-                        updateEmployeeFromExternalData(existingEmployee, empData, tenantId);
+                        updateEmployeeFromExternalData(existingEmployee, empData, tenantId, tenantLoginId);
                         employeeService.updateEmployee(existingEmployee);
                         updatedCount++;
                         System.out.println("Updated employee: " + existingEmployee.getName());
                     } else {
                         // Create new employee
-                        Employee newEmployee = createEmployeeFromExternalData(empData, tenantId);
+                        Employee newEmployee = createEmployeeFromExternalData(empData, tenantId, tenantLoginId);
                         employeeService.saveEmployee(newEmployee);
                         syncedCount++;
                         System.out.println("Created new employee: " + newEmployee.getName());
@@ -554,9 +569,10 @@ public class EmployeeSyncController {
         }
     }
 
-    private Employee createEmployeeFromExternalData(Map<String, Object> empData, String tenantId) {
+    private Employee createEmployeeFromExternalData(Map<String, Object> empData, String tenantId, String tenantLoginId) {
         Employee employee = new Employee();
         employee.setTenantId(tenantId);
+        employee.setTenantLoginId(tenantLoginId);
         employee.setExternalId(empData.get("id") != null ? empData.get("id").toString() : null);
 
         // Map external API fields to our Employee model
@@ -587,9 +603,14 @@ public class EmployeeSyncController {
         return employee;
     }
 
-    private void updateEmployeeFromExternalData(Employee employee, Map<String, Object> empData, String tenantId) {
+    private void updateEmployeeFromExternalData(Employee employee, Map<String, Object> empData, String tenantId, String tenantLoginId) {
         System.out.println("===================================");
         System.out.println("Updating employee from external data: " + employee.getName());
+
+        // Update tenantLoginId if provided
+        if (tenantLoginId != null && !tenantLoginId.isEmpty()) {
+            employee.setTenantLoginId(tenantLoginId);
+        }
 
         // Map external API fields to our Employee model
         String name = (String) empData.get("name");
@@ -617,17 +638,22 @@ public class EmployeeSyncController {
     }
 
     /**
-     * Get fresh access token from external API by authenticating
+     * Get fresh access token from external API by authenticating with tenant credentials
      */
-    private String getAccessTokenFromExternalAPI() {
+    private String getAccessTokenFromExternalAPI(String tenantLoginId, String tenantPassword) {
         try {
-            System.out.println("=== GETTING FRESH ACCESS TOKEN ===");
+            System.out.println("=== GETTING FRESH ACCESS TOKEN FOR TENANT: " + tenantLoginId + " ===");
+
+            if (tenantLoginId == null || tenantLoginId.isEmpty() || tenantPassword == null || tenantPassword.isEmpty()) {
+                System.err.println("❌ Tenant credentials are missing. Cannot authenticate.");
+                return null;
+            }
 
             // External API login endpoint with query parameters
             String loginUrl = "http://103.11.86.192:8083/api/TokenAuth/MobileAuthenticate";
 
-            // Build URL with query parameters
-            String fullUrl = loginUrl + "?UserNameOrEmailAddress=harshita@demomrr.com&Password=123qwe";
+            // Build URL with query parameters using tenant credentials (URL encoded)
+            String fullUrl = loginUrl + "?UserNameOrEmailAddress=" + java.net.URLEncoder.encode(tenantLoginId, "UTF-8") + "&Password=" + java.net.URLEncoder.encode(tenantPassword, "UTF-8");
 
             // Set headers for login request
             HttpHeaders headers = new HttpHeaders();

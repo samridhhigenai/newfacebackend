@@ -22,42 +22,43 @@ public class ExternalApiService {
     private static final String EXTERNAL_API_URL = "http://103.11.86.192:8083/api/services/app/MarkAttendances/CreatePunchForMRR";
     private static final String AUTH_API_URL = "http://103.11.86.192:8083/api/TokenAuth/MobileAuthenticate";
 
-    // Default credentials for authentication
-    private static final String DEFAULT_USERNAME = "harshita@demomrr.com";
-    private static final String DEFAULT_PASSWORD = "123qwe";
-
     public ExternalApiService() {
         this.restTemplate = new RestTemplate();
         this.objectMapper = new ObjectMapper();
     }
 
     /**
-     * Get a valid access token for external API calls
+     * Get a valid access token for external API calls using tenant credentials
      */
-    private String getValidAccessToken() {
+    private String getValidAccessToken(String tenantLoginId, String tenantPassword) {
         try {
-            System.out.println("=== Getting Valid Access Token ===");
+            System.out.println("=== Getting Valid Access Token for Tenant: " + tenantLoginId + " ===");
 
-            // For now, always authenticate with external API to get fresh token
-            System.out.println("Authenticating with external API to get fresh token...");
-            return authenticateWithExternalAPI();
+            // Always authenticate with external API to get fresh token using tenant credentials
+            System.out.println("Authenticating with external API using tenant credentials...");
+            return authenticateWithExternalAPI(tenantLoginId, tenantPassword);
 
         } catch (Exception e) {
-            System.err.println("Error getting access token: " + e.getMessage());
-            // Fallback to direct authentication
-            return authenticateWithExternalAPI();
+            System.err.println("Error getting access token for tenant " + tenantLoginId + ": " + e.getMessage());
+            // Fallback to direct authentication with tenant credentials
+            return authenticateWithExternalAPI(tenantLoginId, tenantPassword);
         }
     }
 
     /**
-     * Authenticate with external API to get fresh access token
+     * Authenticate with external API to get fresh access token using tenant credentials
      */
-    private String authenticateWithExternalAPI() {
+    private String authenticateWithExternalAPI(String tenantLoginId, String tenantPassword) {
         try {
-            System.out.println("=== Authenticating with External API ===");
+            System.out.println("=== Authenticating with External API for Tenant: " + tenantLoginId + " ===");
 
-            // Build URL with query parameters
-            String fullUrl = AUTH_API_URL + "?UserNameOrEmailAddress=" + DEFAULT_USERNAME + "&Password=" + DEFAULT_PASSWORD;
+            if (tenantLoginId == null || tenantLoginId.isEmpty() || tenantPassword == null || tenantPassword.isEmpty()) {
+                System.err.println("❌ Tenant credentials are missing. Cannot authenticate.");
+                return null;
+            }
+
+            // Build URL with query parameters using tenant credentials
+            String fullUrl = AUTH_API_URL + "?UserNameOrEmailAddress=" + java.net.URLEncoder.encode(tenantLoginId, "UTF-8") + "&Password=" + java.net.URLEncoder.encode(tenantPassword, "UTF-8");
 
             // Set headers for login request
             HttpHeaders headers = new HttpHeaders();
@@ -106,27 +107,28 @@ public class ExternalApiService {
     }
 
     /**
-     * Call external API to mark attendance with retry mechanism
+     * Call external API to mark attendance with retry mechanism using tenant credentials
      */
-    public boolean markAttendanceExternal(String employeeId, boolean isCheckOut) {
-        return markAttendanceExternalWithRetry(employeeId, isCheckOut, 0);
+    public boolean markAttendanceExternal(String employeeId, boolean isCheckOut, String tenantLoginId, String tenantPassword) {
+        return markAttendanceExternalWithRetry(employeeId, isCheckOut, tenantLoginId, tenantPassword, 0);
     }
 
     /**
-     * Call external API to mark attendance with retry logic
+     * Call external API to mark attendance with retry logic using tenant credentials
      */
-    private boolean markAttendanceExternalWithRetry(String employeeId, boolean isCheckOut, int retryCount) {
+    private boolean markAttendanceExternalWithRetry(String employeeId, boolean isCheckOut, String tenantLoginId, String tenantPassword, int retryCount) {
         final int maxRetries = 1; // Retry once if failed
 
         try {
             System.out.println("=== MARKING ATTENDANCE EXTERNALLY (Attempt " + (retryCount + 1) + ") ===");
             System.out.println("Employee ID: " + employeeId);
             System.out.println("Is Check Out: " + isCheckOut);
+            System.out.println("Tenant Login ID: " + tenantLoginId);
 
-            // Get valid access token
-            String accessToken = getValidAccessToken();
+            // Get valid access token using tenant credentials
+            String accessToken = getValidAccessToken(tenantLoginId, tenantPassword);
             if (accessToken == null || accessToken.isEmpty()) {
-                System.err.println("❌ Failed to obtain access token for external API");
+                System.err.println("❌ Failed to obtain access token for external API using tenant credentials: " + tenantLoginId);
                 return false;
             }
 
@@ -206,7 +208,7 @@ public class ExternalApiService {
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                 }
-                return markAttendanceExternalWithRetry(employeeId, isCheckOut, retryCount + 1);
+                return markAttendanceExternalWithRetry(employeeId, isCheckOut, tenantLoginId, tenantPassword, retryCount + 1);
             } else {
                 System.err.println("💥 Final failure: Could not mark attendance externally for employee " + employeeId + " after " + (maxRetries + 1) + " attempts");
                 return false;

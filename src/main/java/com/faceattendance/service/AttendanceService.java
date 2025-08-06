@@ -122,9 +122,10 @@ public class AttendanceService {
                     latestAttendance.setCheckOutTime(LocalDateTime.now());
                     Attendance updatedAttendance = attendanceRepository.save(latestAttendance);
 
-                    // Call external API for check-out
-                    boolean apiSuccess = externalApiService.markAttendanceExternal(employee.getEmployeeId(), true);
-                    System.out.println("External API call for check-out: " + (apiSuccess ? "SUCCESS" : "FAILED"));
+                    // Call external API for check-out using tenant credentials
+                    // Note: For now, skipping external API call as we need tenant credentials
+                    // TODO: Pass tenant credentials from request or employee data
+                    System.out.println("External API call skipped - tenant credentials needed");
 
                     return convertToResponse(updatedAttendance);
                 } else {
@@ -150,9 +151,10 @@ public class AttendanceService {
 
             Attendance savedAttendance = attendanceRepository.save(attendance);
 
-            // Call external API for check-in
-            boolean apiSuccess = externalApiService.markAttendanceExternal(employee.getEmployeeId(), false);
-            System.out.println("External API call for check-in: " + (apiSuccess ? "SUCCESS" : "FAILED"));
+            // Call external API for check-in using tenant credentials
+            // Note: For now, skipping external API call as we need tenant credentials
+            // TODO: Pass tenant credentials from request or employee data
+            System.out.println("External API call skipped - tenant credentials needed");
 
             return convertToResponse(savedAttendance);
 
@@ -196,17 +198,11 @@ public class AttendanceService {
                     latestAttendance.setCheckOutTime(LocalDateTime.now());
                     Attendance updatedAttendance = attendanceRepository.save(latestAttendance);
 
-                    // Call external API for check-out
-                    System.out.println("🔄 Calling external MRR API for CHECK-OUT...");
-                    System.out.println("📋 Employee ID for API: " + employee.getEmployeeId());
-                    boolean apiSuccess = externalApiService.markAttendanceExternal(employee.getEmployeeId(), true);
-                    System.out.println("🎯 External MRR API call result: " + (apiSuccess ? "✅ SUCCESS" : "❌ FAILED"));
-
-                    if (apiSuccess) {
-                        System.out.println("🎉 Check-out successfully synced with MRR system!");
-                    } else {
-                        System.out.println("⚠️ Check-out saved locally but failed to sync with MRR system");
-                    }
+                    // Call external API for check-out using tenant credentials
+                    // Note: For now, skipping external API call as we need tenant credentials
+                    // TODO: Pass tenant credentials from request or employee data
+                    System.out.println("🔄 External MRR API call skipped - tenant credentials needed");
+                    System.out.println("⚠️ Check-out saved locally but external sync skipped");
 
                     return convertToResponse(updatedAttendance);
                 } else {
@@ -225,17 +221,11 @@ public class AttendanceService {
 
             Attendance savedAttendance = attendanceRepository.save(attendance);
 
-            // Call external API for check-in
-            System.out.println("🔄 Calling external MRR API for CHECK-IN...");
-            System.out.println("📋 Employee ID for API: " + employee.getEmployeeId());
-            boolean apiSuccess = externalApiService.markAttendanceExternal(employee.getEmployeeId(), false);
-            System.out.println("🎯 External MRR API call result: " + (apiSuccess ? "✅ SUCCESS" : "❌ FAILED"));
-
-            if (apiSuccess) {
-                System.out.println("🎉 Attendance successfully synced with MRR system!");
-            } else {
-                System.out.println("⚠️ Attendance saved locally but failed to sync with MRR system");
-            }
+            // Call external API for check-in using tenant credentials
+            // Note: For now, skipping external API call as we need tenant credentials
+            // TODO: Pass tenant credentials from request or employee data
+            System.out.println("🔄 External MRR API call skipped - tenant credentials needed");
+            System.out.println("⚠️ Attendance saved locally but external sync skipped");
 
             System.out.println("✅ Direct attendance recorded successfully for: " + employeeName);
             return convertToResponse(savedAttendance);
