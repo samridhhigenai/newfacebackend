@@ -225,10 +225,33 @@ public class AttendanceService {
             Attendance savedAttendance = attendanceRepository.save(attendance);
 
             // Call external API for check-in using tenant credentials
-            // Note: For now, skipping external API call as we need tenant credentials
-            // TODO: Pass tenant credentials from request or employee data
-            System.out.println("🔄 External MRR API call skipped - tenant credentials needed");
-            System.out.println("⚠️ Attendance saved locally but external sync skipped");
+            System.out.println("🚀 Attempting external MRR API call for attendance sync...");
+            try {
+                // Use hardcoded tenant credentials for testing (should be from database/config in production)
+                String tenantLoginId = "harshita@demomrr.com"; // TODO: Get from tenant config
+                String tenantPassword = "123456"; // TODO: Get from tenant config
+
+                System.out.println("📋 Using tenant credentials for external API call");
+                System.out.println("👤 Tenant Login ID: " + tenantLoginId);
+                System.out.println("🔑 Tenant Password: [HIDDEN]");
+
+                boolean externalSuccess = externalApiService.markAttendanceExternal(
+                    employeeId,
+                    false, // isCheckOut = false for check-in
+                    tenantLoginId,
+                    tenantPassword
+                );
+
+                if (externalSuccess) {
+                    System.out.println("✅ External MRR API call successful!");
+                } else {
+                    System.out.println("❌ External MRR API call failed, but local attendance saved");
+                }
+            } catch (Exception e) {
+                System.out.println("❌ External MRR API call failed with exception: " + e.getMessage());
+                System.out.println("💾 Local attendance saved successfully despite external failure");
+                e.printStackTrace();
+            }
 
             System.out.println("✅ Direct attendance recorded successfully for: " + employeeName);
             return convertToResponse(savedAttendance);

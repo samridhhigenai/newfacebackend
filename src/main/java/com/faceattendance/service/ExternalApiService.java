@@ -163,14 +163,24 @@ public class ExternalApiService {
             HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
 
             // Log the request details
-            System.out.println("=== 🚀 EXTERNAL API CALL TO MRR SYSTEM ===");
-            System.out.println("🌐 URL: " + EXTERNAL_API_URL);
-            System.out.println("👤 Employee ID: " + employeeId);
-            System.out.println("⏰ Punch Time: " + requestBody.get("punchTime"));
-            System.out.println("📅 Punch Date: " + requestBody.get("punchDate"));
-            System.out.println("🔑 Access Token (first 30 chars): " + accessToken.substring(0, Math.min(30, accessToken.length())) + "...");
-            System.out.println("📝 Full Request Body: " + objectMapper.writeValueAsString(requestBody));
-            System.out.println("📡 Making HTTP POST request...");
+            System.out.println("=== 🚀 MarkAttendances/CreatePunchForMRR API REQUEST ===");
+            System.out.println("🌐 Full URL: " + EXTERNAL_API_URL);
+            System.out.println("📝 Request Method: POST");
+            System.out.println("📋 Request Headers:");
+            System.out.println("   - Content-Type: application/json");
+            System.out.println("   - Authorization: Bearer " + accessToken.substring(0, Math.min(30, accessToken.length())) + "...");
+            System.out.println("📊 Request Body Key-Value Pairs:");
+            System.out.println("   - employeeId: " + requestBody.get("employeeId"));
+            System.out.println("   - punchDate: " + requestBody.get("punchDate"));
+            System.out.println("   - punchTime: " + requestBody.get("punchTime"));
+            System.out.println("   - machine: " + requestBody.get("machine"));
+            System.out.println("   - location: " + requestBody.get("location"));
+            System.out.println("   - gpsLocations: " + requestBody.get("gpsLocations"));
+            System.out.println("   - inOut: " + requestBody.get("inOut"));
+            System.out.println("   - deviceName: " + requestBody.get("deviceName"));
+            System.out.println("   - id: " + requestBody.get("id"));
+            System.out.println("📄 Complete Request Body JSON: " + objectMapper.writeValueAsString(requestBody));
+            System.out.println("📡 Making HTTP POST request to MRR system...");
 
             // Make the API call
             ResponseEntity<String> response = restTemplate.exchange(
@@ -181,17 +191,45 @@ public class ExternalApiService {
             );
 
             // Log the response details
-            System.out.println("✅ API RESPONSE RECEIVED:");
+            System.out.println("=== 📥 MarkAttendances/CreatePunchForMRR API RESPONSE ===");
             System.out.println("📊 Status Code: " + response.getStatusCode().value() + " (" + response.getStatusCode() + ")");
-            System.out.println("📄 Response Headers: " + response.getHeaders());
-            System.out.println("📋 Response Body: " + response.getBody());
+            System.out.println("📋 Response Headers: " + response.getHeaders());
+            System.out.println("📄 Response Body: " + response.getBody());
+            System.out.println("⏱️ Response Time: " + java.time.LocalDateTime.now());
 
             if (response.getStatusCode().is2xxSuccessful()) {
-                System.out.println("🎉 SUCCESS: External API call completed successfully!");
+                System.out.println("=== ✅ MarkAttendances/CreatePunchForMRR SUCCESS ===");
+                System.out.println("🎉 External attendance marked successfully in MRR system!");
+                System.out.println("👤 Employee ID: " + requestBody.get("employeeId"));
+                System.out.println("⏰ Punch Time: " + requestBody.get("punchTime"));
+                System.out.println("📍 In/Out: " + requestBody.get("inOut"));
+
+                // Try to parse response for additional details
+                try {
+                    String responseBody = response.getBody();
+                    if (responseBody != null && !responseBody.isEmpty()) {
+                        System.out.println("🔍 Response Analysis:");
+                        System.out.println("   - Response Length: " + responseBody.length() + " characters");
+                        if (responseBody.contains("success")) {
+                            System.out.println("   - Contains 'success' indicator");
+                        }
+                        if (responseBody.contains("error")) {
+                            System.out.println("   - Contains 'error' indicator");
+                        }
+                    }
+                } catch (Exception e) {
+                    System.out.println("   - Could not analyze response body: " + e.getMessage());
+                }
             } else {
-                System.out.println("❌ ERROR: External API call failed with status: " + response.getStatusCode());
+                System.out.println("=== ❌ MarkAttendances/CreatePunchForMRR FAILED ===");
+                System.out.println("💥 External API call failed with status: " + response.getStatusCode());
+                System.out.println("📄 Error Response: " + response.getBody());
+                System.out.println("🔍 Error Analysis:");
+                System.out.println("   - Employee ID: " + requestBody.get("employeeId"));
+                System.out.println("   - Attempted Punch Time: " + requestBody.get("punchTime"));
+                System.out.println("   - Access Token Used: " + accessToken.substring(0, Math.min(20, accessToken.length())) + "...");
             }
-            System.out.println("=== 🏁 END EXTERNAL API CALL ===");
+            System.out.println("=== 🏁 END MarkAttendances/CreatePunchForMRR API CALL ===");
 
             // Return true if successful (2xx status codes)
             return response.getStatusCode().is2xxSuccessful();
