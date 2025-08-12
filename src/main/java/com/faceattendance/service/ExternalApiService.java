@@ -1,6 +1,7 @@
 package com.faceattendance.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -139,7 +140,7 @@ public class ExternalApiService {
             requestBody.put("punchDate", now.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + "Z");
             requestBody.put("punchTime", now.format(DateTimeFormatter.ofPattern("HH:mm")));
             requestBody.put("machine", "face recognition");
-            requestBody.put("location", "{\"lat\":\"28.6448\",\"lng\":\"77.216721\"}");
+            requestBody.put("location", "Kashmiri Gate");
 
             // GPS locations array
             Map<String, String> gpsLocation = new HashMap<>();
@@ -197,42 +198,70 @@ public class ExternalApiService {
             System.out.println("📄 Response Body: " + response.getBody());
             System.out.println("⏱️ Response Time: " + java.time.LocalDateTime.now());
 
-            if (response.getStatusCode().is2xxSuccessful()) {
-                System.out.println("=== ✅ MarkAttendances/CreatePunchForMRR SUCCESS ===");
-                System.out.println("🎉 External attendance marked successfully in MRR system!");
-                System.out.println("👤 Employee ID: " + requestBody.get("employeeId"));
-                System.out.println("⏰ Punch Time: " + requestBody.get("punchTime"));
-                System.out.println("📍 In/Out: " + requestBody.get("inOut"));
+            // Parse response body for detailed analysis
+            try {
+                String responseBody = response.getBody();
+                ObjectMapper responseMapper = new ObjectMapper();
+                JsonNode responseJson = responseMapper.readTree(responseBody);
 
-                // Try to parse response for additional details
-                try {
-                    String responseBody = response.getBody();
-                    if (responseBody != null && !responseBody.isEmpty()) {
-                        System.out.println("🔍 Response Analysis:");
-                        System.out.println("   - Response Length: " + responseBody.length() + " characters");
-                        if (responseBody.contains("success")) {
-                            System.out.println("   - Contains 'success' indicator");
-                        }
-                        if (responseBody.contains("error")) {
-                            System.out.println("   - Contains 'error' indicator");
-                        }
+                if (response.getStatusCode().is2xxSuccessful()) {
+                    // Check for success in response body
+                    if (responseJson.has("success") && responseJson.get("success").asBoolean()) {
+                        System.out.println("=== ✅ MarkAttendances/CreatePunchForMRR SUCCESS ===");
+                        System.out.println("🎉 External attendance marked successfully in MRR system!");
+                        System.out.println("� Result: " + responseJson.get("result").asText());
+                        System.out.println("�👤 Employee ID: " + requestBody.get("employeeId"));
+                        System.out.println("⏰ Punch Time: " + requestBody.get("punchTime"));
+                        System.out.println("📍 In/Out: " + requestBody.get("inOut"));
+                        System.out.println("✅ Attendance marked in external MRR system successfully!");
+                        return true;
+                    } else {
+                        System.out.println("=== ❌ MarkAttendances/CreatePunchForMRR FAILED (Success=false) ===");
+                        System.out.println("📄 Response indicates failure despite 2xx status code");
+                        System.out.println("📝 Response: " + responseBody);
+                        return false;
                     }
-                } catch (Exception e) {
-                    System.out.println("   - Could not analyze response body: " + e.getMessage());
-                }
-            } else {
-                System.out.println("=== ❌ MarkAttendances/CreatePunchForMRR FAILED ===");
-                System.out.println("💥 External API call failed with status: " + response.getStatusCode());
-                System.out.println("📄 Error Response: " + response.getBody());
-                System.out.println("🔍 Error Analysis:");
-                System.out.println("   - Employee ID: " + requestBody.get("employeeId"));
-                System.out.println("   - Attempted Punch Time: " + requestBody.get("punchTime"));
-                System.out.println("   - Access Token Used: " + accessToken.substring(0, Math.min(20, accessToken.length())) + "...");
-            }
-            System.out.println("=== 🏁 END MarkAttendances/CreatePunchForMRR API CALL ===");
+                } else {
+                    System.out.println("=== ❌ MarkAttendances/CreatePunchForMRR FAILED ===");
+                    System.out.println("📊 HTTP Status: " + response.getStatusCode());
 
-            // Return true if successful (2xx status codes)
-            return response.getStatusCode().is2xxSuccessful();
+                    // Handle different error types
+                    if (responseJson.has("error")) {
+                        JsonNode error = responseJson.get("error");
+                        String errorMessage = error.has("message") ? error.get("message").asText() : "Unknown error";
+
+                        System.out.println("🔍 Error Analysis:");
+                        System.out.println("   - Error Message: " + errorMessage);
+
+                        // Specific error handling
+                        if (errorMessage.contains("Multiple employees exist")) {
+                            System.out.println("   - Error Type: DUPLICATE_EMPLOYEE");
+                            System.out.println("   - Issue: Multiple employees found with same ID");
+                        } else if (errorMessage.contains("Employee does not exist")) {
+                            System.out.println("   - Error Type: EMPLOYEE_NOT_FOUND");
+                            System.out.println("   - Issue: Employee ID not found in external system");
+                        } else if (errorMessage.contains("Incorrect Punch Date")) {
+                            System.out.println("   - Error Type: INVALID_DATE");
+                            System.out.println("   - Issue: Date format or value is incorrect");
+                        } else if (errorMessage.contains("SQL Execution Failed")) {
+                            System.out.println("   - Error Type: SQL_ERROR");
+                            System.out.println("   - Issue: Database execution failed");
+                        } else {
+                            System.out.println("   - Error Type: UNKNOWN");
+                        }
+
+                        System.out.println("📄 Full Error Response: " + responseBody);
+                    } else {
+                        System.out.println("📄 Unexpected error response format: " + responseBody);
+                    }
+                    return false;
+                }
+            } catch (Exception e) {
+                System.out.println("❌ Failed to parse response JSON: " + e.getMessage());
+                System.out.println("📄 Raw response: " + response.getBody());
+                System.out.println("=== 🏁 END MarkAttendances/CreatePunchForMRR API CALL ===");
+                return false;
+            }
 
         } catch (Exception e) {
             System.err.println("❌ External API call failed (attempt " + (retryCount + 1) + "): " + e.getMessage());
