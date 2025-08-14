@@ -332,7 +332,7 @@ public class EmployeeSyncController {
             System.out.println("Max Result Count: " + maxResultCount);
 
             // External API URL with dynamic parameters and tenant filtering
-            String externalApiUrl = "http://103.11.86.192:8083/api/services/app/Employees/GetAll?SkipCount=" + skipCount + "&MaxResultCount=" + maxResultCount;
+            String externalApiUrl = "http://103.11.86.192:8083/api/services/app/Employees/GetAllEmployeeForFaceReco?SkipCount=" + skipCount + "&MaxResultCount=" + maxResultCount;
 
             // Add tenant filtering if tenantLoginId is provided
             if (tenantLoginId != null && !tenantLoginId.isEmpty()) {

@@ -146,7 +146,7 @@ public class ExternalApiService {
             Map<String, String> gpsLocation = new HashMap<>();
             gpsLocation.put("lattitude", "28.6448");
             gpsLocation.put("longitude", "77.216721");
-            gpsLocation.put("locationName", "Kashmiri Gate");
+            gpsLocation.put("locationName", "");
             requestBody.put("gpsLocations", List.of(gpsLocation));
 
             requestBody.put("employeeId", employeeId);
